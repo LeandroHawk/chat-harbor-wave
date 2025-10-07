@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { ChatHeader } from "@/components/ChatHeader";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { TypingIndicator } from "@/components/TypingIndicator";
 import { ChatSidebar } from "@/components/ChatSidebar";
-import { Dashboard } from "@/components/Dashboard";
+import { Dashboard, DashboardStats } from "@/components/Dashboard";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Message {
@@ -20,6 +20,25 @@ interface Conversation {
   timestamp: Date;
   messages: Message[];
 }
+
+type QueryCategory = 'rastreamento' | 'documentacao' | 'operacoes';
+
+const categorizeQuery = (text: string): QueryCategory => {
+  const lowerText = text.toLowerCase();
+  
+  // Palavras-chave para rastreamento
+  if (lowerText.match(/\b(navio|rastrear|rastro|localização|posição|vessel|ship|carga|container|tracking)\b/i)) {
+    return 'rastreamento';
+  }
+  
+  // Palavras-chave para documentação
+  if (lowerText.match(/\b(documento|documentação|certidão|certificado|papéis|licença|autorização|manifest|bl|conhecimento)\b/i)) {
+    return 'documentacao';
+  }
+  
+  // Por padrão, operações
+  return 'operacoes';
+};
 
 const Index = () => {
   const [conversations, setConversations] = useState<Conversation[]>([
@@ -45,6 +64,34 @@ const Index = () => {
 
   const currentConversation = conversations.find(c => c.id === currentConversationId);
   const messages = currentConversation?.messages || [];
+
+  // Calcular estatísticas do dashboard
+  const dashboardStats = useMemo((): DashboardStats => {
+    const allUserMessages = conversations.flatMap(conv => 
+      conv.messages.filter(m => m.isUser)
+    );
+
+    const categoryCounts = {
+      rastreamento: 0,
+      documentacao: 0,
+      operacoes: 0
+    };
+
+    allUserMessages.forEach(msg => {
+      const category = categorizeQuery(msg.text);
+      categoryCounts[category]++;
+    });
+
+    return {
+      totalConversations: conversations.length,
+      totalQueries: allUserMessages.length,
+      categoryCounts,
+      recentQueries: allUserMessages
+        .slice(-10)
+        .reverse()
+        .map(m => m.text)
+    };
+  }, [conversations]);
 
   const scrollToBottom = () => {
     if (scrollRef.current) {
@@ -146,7 +193,7 @@ const Index = () => {
         
         {currentView === 'dashboard' ? (
           <ScrollArea className="flex-1">
-            <Dashboard />
+            <Dashboard stats={dashboardStats} />
           </ScrollArea>
         ) : (
           <>
