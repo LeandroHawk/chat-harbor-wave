@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Maritime color palette */
+    --background: 210 30% 98%;
+    --foreground: 215 25% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 15%;
+
+    /* Deep ocean blue */
+    --primary: 210 85% 25%;
+    --primary-foreground: 210 40% 98%;
+
+    /* Light ocean blue */
+    --secondary: 205 70% 92%;
+    --secondary-foreground: 210 85% 25%;
+
+    --muted: 210 30% 94%;
+    --muted-foreground: 215 15% 45%;
+
+    /* Golden anchor accent */
+    --accent: 45 90% 55%;
+    --accent-foreground: 215 25% 15%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 210 25% 88%;
+    --input: 210 25% 88%;
+    --ring: 210 85% 25%;
+
+    --radius: 0.75rem;
+
+    /* Chat-specific tokens */
+    --chat-user-bg: 210 85% 25%;
+    --chat-user-fg: 210 40% 98%;
+    --chat-bot-bg: 0 0% 100%;
+    --chat-bot-fg: 215 25% 15%;
+    
+    /* Gradient tokens */
+    --gradient-ocean: linear-gradient(135deg, hsl(210, 85%, 25%) 0%, hsl(205, 75%, 35%) 100%);
+    --gradient-sky: linear-gradient(180deg, hsl(205, 70%, 92%) 0%, hsl(210, 30%, 98%) 100%);
+    
+    /* Animation */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    /* Shadows */
+    --shadow-message: 0 2px 8px hsla(210, 85%, 25%, 0.08);
+    --shadow-elegant: 0 10px 30px -10px hsla(210, 85%, 25%, 0.15);
+  }
+
+  .dark {
+    --background: 215 30% 8%;
+    --foreground: 210 40% 98%;
+
+    --card: 215 28% 12%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 215 28% 12%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 205 75% 55%;
+    --primary-foreground: 215 30% 8%;
+
+    --secondary: 215 25% 18%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 215 25% 18%;
+    --muted-foreground: 215 15% 65%;
+
+    --accent: 45 90% 60%;
+    --accent-foreground: 215 30% 8%;
+
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 215 25% 20%;
+    --input: 215 25% 20%;
+    --ring: 205 75% 55%;
+
+    --chat-user-bg: 205 75% 55%;
+    --chat-user-fg: 215 30% 8%;
+    --chat-bot-bg: 215 28% 12%;
+    --chat-bot-fg: 210 40% 98%;
+    
+    --gradient-ocean: linear-gradient(135deg, hsl(215, 30%, 8%) 0%, hsl(210, 35%, 15%) 100%);
+    --gradient-sky: linear-gradient(180deg, hsl(215, 28%, 12%) 0%, hsl(215, 30%, 8%) 100%);
+    
+    --shadow-message: 0 2px 8px hsla(0, 0%, 0%, 0.3);
+    --shadow-elegant: 0 10px 30px -10px hsla(0, 0%, 0%, 0.5);
+  }
+}
+
+/* Custom animations */
+@layer utilities {
+  @keyframes ship-sail {
+    0%, 100% {
+      transform: translateX(-10px) translateY(0px);
+    }
+    50% {
+      transform: translateX(10px) translateY(-5px);
+    }
+  }
+
+  @keyframes wave {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-3px);
+    }
+  }
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-ship-sail {
+    animation: ship-sail 4s ease-in-out infinite;
+  }
+
+  .animate-wave {
+    animation: wave 2s ease-in-out infinite;
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.4s ease-out;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
