@@ -16,8 +16,8 @@ interface ChatSidebarProps {
   onNewChat: () => void;
   onSelectConversation: (id: string) => void;
   onDeleteConversation: (id: string) => void;
-  onToggleView: (view: 'chat' | 'dashboard') => void;
-  currentView: 'chat' | 'dashboard';
+  onToggleView: (view: "chat" | "dashboard") => void;
+  currentView: "chat" | "dashboard";
 }
 
 export const ChatSidebar = ({
@@ -28,40 +28,31 @@ export const ChatSidebar = ({
   onSelectConversation,
   onDeleteConversation,
   onToggleView,
-  currentView
+  currentView,
 }: ChatSidebarProps) => {
   if (!isOpen) return null;
 
   return (
     <div className="w-64 border-r border-border bg-card/50 backdrop-blur flex flex-col h-full">
       <div className="p-4 border-b border-border space-y-2">
-        <Button 
+        <Button
           onClick={onNewChat}
-          className="w-full justify-start gap-2"
+          className="w-full justify-center gap-2"
           variant="default"
         >
           <Plus className="h-4 w-4" />
           Novo Chat
         </Button>
-        
+
         <div className="flex gap-2">
           <Button
-            onClick={() => onToggleView('chat')}
-            variant={currentView === 'chat' ? 'default' : 'outline'}
+            onClick={() => onToggleView("chat")}
+            variant={currentView === "chat" ? "default" : "outline"}
             size="sm"
             className="flex-1 gap-2"
           >
             <MessageSquare className="h-4 w-4" />
             Chat
-          </Button>
-          <Button
-            onClick={() => onToggleView('dashboard')}
-            variant={currentView === 'dashboard' ? 'default' : 'outline'}
-            size="sm"
-            className="flex-1 gap-2"
-          >
-            <LayoutDashboard className="h-4 w-4" />
-            Dashboard
           </Button>
         </div>
       </div>
@@ -79,7 +70,7 @@ export const ChatSidebar = ({
               )}
             >
               <MessageSquare className="h-4 w-4 flex-shrink-0" />
-              <div 
+              <div
                 className="flex-1 min-w-0"
                 onClick={() => onSelectConversation(conv.id)}
               >
