@@ -2,10 +2,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send } from "lucide-react";
-import { ChatMessage } from "./ChatMessage"; // Ajuste o caminho conforme necessário
+import { ChatMessage } from "./ChatMessage"; // ajuste o path
 
 interface ChatInputProps {
-  onSendMessage?: (message: string) => void;
   disabled?: boolean;
 }
 
@@ -16,11 +15,24 @@ type ChatEntry = {
   timestamp: Date;
 };
 
-export const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
+export const ChatInput = ({ disabled }: ChatInputProps) => {
   const [message, setMessage] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatEntry[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const enviarParaN8N = async (texto: string) => {
+    setLoading(true); // inicia carregamento
+
+    // Adiciona mensagem do usuário
+    const userMessage: ChatEntry = {
+      id: crypto.randomUUID(),
+      message: texto,
+      isUser: true,
+      timestamp: new Date(),
+    };
+
+    setChatMessages((prev) => [...prev, userMessage]);
+
     try {
       const resposta = await fetch(
         "https://n8n.hackathon.souamigu.org.br/webhook-test/90e74c2f-1059-44b3-8f8d-4e447091b4d7",
@@ -32,14 +44,22 @@ export const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
       );
 
       const data = await resposta.json();
-      console.log("Resposta do N8N:", data);
 
       if (data && data[0]?.output) {
+        const botMessage: ChatEntry = {
+          id: crypto.randomUUID(),
+          message: data[0].output,
+          isUser: false,
+          timestamp: new Date(),
+        };
+
+        setChatMessages((prev) => [...prev, botMessage]);
+      } else {
         setChatMessages((prev) => [
           ...prev,
           {
             id: crypto.randomUUID(),
-            message: data[0].output,
+            message: "❌ Erro: resposta inesperada do agente.",
             isUser: false,
             timestamp: new Date(),
           },
@@ -47,26 +67,24 @@ export const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
       }
     } catch (err) {
       console.error("Erro ao enviar para N8N:", err);
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          message: "❌ Erro ao comunicar com o agente.",
+          isUser: false,
+          timestamp: new Date(),
+        },
+      ]);
+    } finally {
+      setLoading(false); // encerra carregamento
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim() && !disabled) {
-      const userEntry: ChatEntry = {
-        id: crypto.randomUUID(),
-        message,
-        isUser: true,
-        timestamp: new Date(),
-      };
-
-      setChatMessages((prev) => [...prev, userEntry]);
+    if (message.trim() && !disabled && !loading) {
       enviarParaN8N(message);
-
-      if (onSendMessage) {
-        onSendMessage(message);
-      }
-
       setMessage("");
     }
   };
@@ -90,6 +108,15 @@ export const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
             timestamp={msg.timestamp}
           />
         ))}
+
+        {/* Loading typing indicator */}
+        {loading && (
+          <ChatMessage
+            message="Digitando..."
+            isUser={false}
+            timestamp={new Date()}
+          />
+        )}
       </div>
 
       {/* Input */}
@@ -104,13 +131,13 @@ export const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Digite sua mensagem..."
-              disabled={disabled}
+              disabled={disabled || loading}
               className="min-h-[60px] max-h-[200px] resize-none rounded-2xl border-border focus-visible:ring-primary"
               rows={1}
             />
             <Button
               type="submit"
-              disabled={!message.trim() || disabled}
+              disabled={!message.trim() || disabled || loading}
               size="icon"
               className="h-[60px] w-[60px] rounded-2xl bg-primary hover:bg-primary/90 transition-all"
             >
