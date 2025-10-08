@@ -2,15 +2,23 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send } from "lucide-react";
+import { ChatMessage } from "./ChatMessage"; // Ajuste o caminho conforme necessário
 
 interface ChatInputProps {
-  onSendMessage?: (message: string) => void; // opcional se quiser usar callback
+  onSendMessage?: (message: string) => void;
   disabled?: boolean;
 }
 
+type ChatEntry = {
+  id: string;
+  message: string;
+  isUser: boolean;
+  timestamp: Date;
+};
+
 export const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
   const [message, setMessage] = useState("");
-  const [chatResponse, setChatResponse] = useState<string | null>(null); // Estado para armazenar a resposta do n8n
+  const [chatMessages, setChatMessages] = useState<ChatEntry[]>([]);
 
   const enviarParaN8N = async (texto: string) => {
     try {
@@ -19,16 +27,23 @@ export const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ texto }), // Enviando o texto da mensagem
+          body: JSON.stringify({ texto }),
         }
       );
 
       const data = await resposta.json();
       console.log("Resposta do N8N:", data);
 
-      // Captura apenas o conteúdo da chave "output" da resposta do n8n
       if (data && data[0]?.output) {
-        setChatResponse(data[0].output); // Assume que a resposta vem no formato [{ output: "resposta do agente" }]
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            message: data[0].output,
+            isUser: false,
+            timestamp: new Date(),
+          },
+        ]);
       }
     } catch (err) {
       console.error("Erro ao enviar para N8N:", err);
@@ -38,15 +53,20 @@ export const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && !disabled) {
-      // Envia a mensagem para o n8n
+      const userEntry: ChatEntry = {
+        id: crypto.randomUUID(),
+        message,
+        isUser: true,
+        timestamp: new Date(),
+      };
+
+      setChatMessages((prev) => [...prev, userEntry]);
       enviarParaN8N(message);
 
-      // Se houver um callback externo
       if (onSendMessage) {
         onSendMessage(message);
       }
 
-      // Limpar a caixa de texto após o envio
       setMessage("");
     }
   };
@@ -59,42 +79,49 @@ export const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
-    >
-      <div className="container max-w-4xl mx-auto p-4">
-        <div className="flex gap-2 items-end">
-          <Textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Digite sua mensagem..."
-            disabled={disabled}
-            className="min-h-[60px] max-h-[200px] resize-none rounded-2xl border-border focus-visible:ring-primary"
-            rows={1}
+    <div className="flex flex-col">
+      {/* Mensagens do chat */}
+      <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto px-4 py-2">
+        {chatMessages.map((msg) => (
+          <ChatMessage
+            key={msg.id}
+            message={msg.message}
+            isUser={msg.isUser}
+            timestamp={msg.timestamp}
           />
-          <Button
-            type="submit"
-            disabled={!message.trim() || disabled}
-            size="icon"
-            className="h-[60px] w-[60px] rounded-2xl bg-primary hover:bg-primary/90 transition-all"
-          >
-            <Send className="h-5 w-5" />
-          </Button>
-        </div>
-        <p className="text-xs text-muted-foreground mt-2 text-center">
-          Pressione Enter para enviar, Shift + Enter para nova linha
-        </p>
-
-        {/* Exibir a resposta do N8N após o envio */}
-        {chatResponse && (
-          <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-            <p><strong>Resposta do Agente:</strong></p>
-            <p>{chatResponse}</p>
-          </div>
-        )}
+        ))}
       </div>
-    </form>
+
+      {/* Input */}
+      <form
+        onSubmit={handleSubmit}
+        className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+      >
+        <div className="container max-w-4xl mx-auto p-4">
+          <div className="flex gap-2 items-end">
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Digite sua mensagem..."
+              disabled={disabled}
+              className="min-h-[60px] max-h-[200px] resize-none rounded-2xl border-border focus-visible:ring-primary"
+              rows={1}
+            />
+            <Button
+              type="submit"
+              disabled={!message.trim() || disabled}
+              size="icon"
+              className="h-[60px] w-[60px] rounded-2xl bg-primary hover:bg-primary/90 transition-all"
+            >
+              <Send className="h-5 w-5" />
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2 text-center">
+            Pressione Enter para enviar, Shift + Enter para nova linha
+          </p>
+        </div>
+      </form>
+    </div>
   );
 };
