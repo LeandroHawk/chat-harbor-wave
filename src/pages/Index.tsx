@@ -59,7 +59,6 @@ const Index = () => {
   const [currentConversationId, setCurrentConversationId] = useState("1");
   const [isTyping, setIsTyping] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [currentView, setCurrentView] = useState<'chat' | 'dashboard'>('chat');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const currentConversation = conversations.find(c => c.id === currentConversationId);
@@ -119,7 +118,6 @@ const Index = () => {
     };
     setConversations(prev => [...prev, newConv]);
     setCurrentConversationId(newConv.id);
-    setCurrentView('chat');
   };
 
   const handleDeleteConversation = (id: string) => {
@@ -184,37 +182,27 @@ const Index = () => {
         onNewChat={handleNewChat}
         onSelectConversation={setCurrentConversationId}
         onDeleteConversation={handleDeleteConversation}
-        onToggleView={setCurrentView}
-        currentView={currentView}
       />
       
       <div className="flex flex-col flex-1 min-w-0">
         <ChatHeader onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
         
-        {currentView === 'dashboard' ? (
-          <ScrollArea className="flex-1">
-            <Dashboard stats={dashboardStats} />
-          </ScrollArea>
-        ) : (
-          <>
-            <ScrollArea className="flex-1 container max-w-4xl mx-auto">
-              <div className="py-4">
-                {messages.map((message) => (
-                  <ChatMessage
-                    key={message.id}
-                    message={message.text}
-                    isUser={message.isUser}
-                    timestamp={message.timestamp}
-                  />
-                ))}
-                {isTyping && <TypingIndicator />}
-                <div ref={scrollRef} />
-              </div>
-            </ScrollArea>
+        <ScrollArea className="flex-1 container max-w-4xl mx-auto">
+          <div className="py-4">
+            {messages.map((message) => (
+              <ChatMessage
+                key={message.id}
+                message={message.text}
+                isUser={message.isUser}
+                timestamp={message.timestamp}
+              />
+            ))}
+            {isTyping && <TypingIndicator />}
+            <div ref={scrollRef} />
+          </div>
+        </ScrollArea>
 
-            <ChatInput onSendMessage={handleSendMessage} disabled={isTyping} />
-          </>
-        )}
+        <ChatInput onSendMessage={handleSendMessage} disabled={isTyping} />
       </div>
     </div>
   );

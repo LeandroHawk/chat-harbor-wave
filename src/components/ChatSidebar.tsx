@@ -1,4 +1,4 @@
-import { Plus, MessageSquare, LayoutDashboard, Trash2 } from "lucide-react";
+import { Plus, MessageSquare, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -16,8 +16,6 @@ interface ChatSidebarProps {
   onNewChat: () => void;
   onSelectConversation: (id: string) => void;
   onDeleteConversation: (id: string) => void;
-  onToggleView: (view: 'chat' | 'dashboard') => void;
-  currentView: 'chat' | 'dashboard';
 }
 
 export const ChatSidebar = ({
@@ -27,14 +25,12 @@ export const ChatSidebar = ({
   onNewChat,
   onSelectConversation,
   onDeleteConversation,
-  onToggleView,
-  currentView
 }: ChatSidebarProps) => {
   if (!isOpen) return null;
 
   return (
     <div className="w-64 border-r border-border bg-card/50 backdrop-blur flex flex-col h-full">
-      <div className="p-4 border-b border-border space-y-2">
+      <div className="p-4 border-b border-border">
         <Button 
           onClick={onNewChat}
           className="w-full justify-start gap-2"
@@ -43,27 +39,6 @@ export const ChatSidebar = ({
           <Plus className="h-4 w-4" />
           Novo Chat
         </Button>
-        
-        <div className="flex gap-2">
-          <Button
-            onClick={() => onToggleView('chat')}
-            variant={currentView === 'chat' ? 'default' : 'outline'}
-            size="sm"
-            className="flex-1 gap-2"
-          >
-            <MessageSquare className="h-4 w-4" />
-            Chat
-          </Button>
-          <Button
-            onClick={() => onToggleView('dashboard')}
-            variant={currentView === 'dashboard' ? 'default' : 'outline'}
-            size="sm"
-            className="flex-1 gap-2"
-          >
-            <LayoutDashboard className="h-4 w-4" />
-            Dashboard
-          </Button>
-        </div>
       </div>
 
       <ScrollArea className="flex-1">
