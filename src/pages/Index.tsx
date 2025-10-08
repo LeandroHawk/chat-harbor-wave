@@ -21,23 +21,28 @@ interface Conversation {
   messages: Message[];
 }
 
-type QueryCategory = 'rastreamento' | 'documentacao' | 'operacoes';
+type QueryCategory = "rastreamento" | "documentacao" | "operacoes";
 
 const categorizeQuery = (text: string): QueryCategory => {
   const lowerText = text.toLowerCase();
-  
-  // Palavras-chave para rastreamento
-  if (lowerText.match(/\b(navio|rastrear|rastro|localização|posição|vessel|ship|carga|container|tracking)\b/i)) {
-    return 'rastreamento';
+
+  if (
+    lowerText.match(
+      /\b(navio|rastrear|rastro|localização|posição|vessel|ship|carga|container|tracking)\b/i
+    )
+  ) {
+    return "rastreamento";
   }
-  
-  // Palavras-chave para documentação
-  if (lowerText.match(/\b(documento|documentação|certidão|certificado|papéis|licença|autorização|manifest|bl|conhecimento)\b/i)) {
-    return 'documentacao';
+
+  if (
+    lowerText.match(
+      /\b(documento|documentação|certidão|certificado|papéis|licença|autorização|manifest|bl|conhecimento)\b/i
+    )
+  ) {
+    return "documentacao";
   }
-  
-  // Por padrão, operações
-  return 'operacoes';
+
+  return "operacoes";
 };
 
 const Index = () => {
@@ -56,27 +61,29 @@ const Index = () => {
       ],
     },
   ]);
+
   const [currentConversationId, setCurrentConversationId] = useState("1");
   const [isTyping, setIsTyping] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const currentConversation = conversations.find(c => c.id === currentConversationId);
+  const currentConversation = conversations.find(
+    (c) => c.id === currentConversationId
+  );
   const messages = currentConversation?.messages || [];
 
-  // Calcular estatísticas do dashboard
   const dashboardStats = useMemo((): DashboardStats => {
-    const allUserMessages = conversations.flatMap(conv => 
-      conv.messages.filter(m => m.isUser)
+    const allUserMessages = conversations.flatMap((conv) =>
+      conv.messages.filter((m) => m.isUser)
     );
 
     const categoryCounts = {
       rastreamento: 0,
       documentacao: 0,
-      operacoes: 0
+      operacoes: 0,
     };
 
-    allUserMessages.forEach(msg => {
+    allUserMessages.forEach((msg) => {
       const category = categorizeQuery(msg.text);
       categoryCounts[category]++;
     });
@@ -88,7 +95,7 @@ const Index = () => {
       recentQueries: allUserMessages
         .slice(-10)
         .reverse()
-        .map(m => m.text)
+        .map((m) => m.text),
     };
   }, [conversations]);
 
@@ -116,15 +123,16 @@ const Index = () => {
         },
       ],
     };
-    setConversations(prev => [...prev, newConv]);
+    setConversations((prev) => [...prev, newConv]);
     setCurrentConversationId(newConv.id);
   };
 
   const handleDeleteConversation = (id: string) => {
     if (conversations.length === 1) return;
-    setConversations(prev => prev.filter(c => c.id !== id));
+    setConversations((prev) => prev.filter((c) => c.id !== id));
     if (currentConversationId === id) {
-      setCurrentConversationId(conversations.find(c => c.id !== id)?.id || conversations[0].id);
+      const fallbackId = conversations.find((c) => c.id !== id)?.id || "1";
+      setCurrentConversationId(fallbackId);
     }
   };
 
@@ -136,41 +144,68 @@ const Index = () => {
       timestamp: new Date(),
     };
 
-    setConversations(prev => prev.map(conv => 
-      conv.id === currentConversationId 
-        ? { ...conv, messages: [...conv.messages, userMessage] }
-        : conv
-    ));
+    // Adiciona a mensagem do usuário
+    setConversations((prev) =>
+      prev.map((conv) =>
+        conv.id === currentConversationId
+          ? { ...conv, messages: [...conv.messages, userMessage] }
+          : conv
+      )
+    );
     setIsTyping(true);
 
-    // Simular resposta do bot (integrar com N8N webhook aqui)
-    setTimeout(() => {
+    try {
+      const resposta = await fetch(
+        "https://n8n.hackathon.souamigu.org.br/webhook-test/90e74c2f-1059-44b3-8f8d-4e447091b4d7",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ texto: text }),
+        }
+      );
+
+      if (!resposta.ok) {
+        const erroTexto = await resposta.text();
+        console.error("Erro HTTP:", resposta.status, erroTexto);
+        throw new Error(`HTTP ${resposta.status}`);
+      }
+
+      const respostaTexto = await resposta.text();
+
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: "Recebi sua mensagem! Em um ambiente de produção, esta resposta viria do seu webhook N8N. Configure a integração na função handleSendMessage para conectar com seu chatbot.",
+        text: respostaTexto,
         isUser: false,
         timestamp: new Date(),
       };
-      setConversations(prev => prev.map(conv => 
-        conv.id === currentConversationId 
-          ? { ...conv, messages: [...conv.messages, botMessage] }
-          : conv
-      ));
-      setIsTyping(false);
-    }, 1500);
 
-    // TODO: Integração com N8N
-    // try {
-    //   const response = await fetch('SEU_WEBHOOK_N8N_URL', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify({ message: text })
-    //   });
-    //   const data = await response.json();
-    //   // Processar resposta...
-    // } catch (error) {
-    //   console.error('Erro ao enviar mensagem:', error);
-    // }
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv.id === currentConversationId
+            ? { ...conv, messages: [...conv.messages, botMessage] }
+            : conv
+        )
+      );
+    } catch (error) {
+      const erroBot: Message = {
+        id: (Date.now() + 2).toString(),
+        text: `❌ Erro ao comunicar com o agente: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        isUser: false,
+        timestamp: new Date(),
+      };
+
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv.id === currentConversationId
+            ? { ...conv, messages: [...conv.messages, erroBot] }
+            : conv
+        )
+      );
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   return (
@@ -183,10 +218,10 @@ const Index = () => {
         onSelectConversation={setCurrentConversationId}
         onDeleteConversation={handleDeleteConversation}
       />
-      
+
       <div className="flex flex-col flex-1 min-w-0">
         <ChatHeader onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
-        
+
         <ScrollArea className="flex-1 container max-w-4xl mx-auto">
           <div className="py-4">
             {messages.map((message) => (

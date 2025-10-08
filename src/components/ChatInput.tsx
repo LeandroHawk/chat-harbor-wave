@@ -2,84 +2,19 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send } from "lucide-react";
-import { ChatMessage } from "./ChatMessage"; // ajuste o path
 
 interface ChatInputProps {
   disabled?: boolean;
+  onSendMessage: (text: string) => void; // <--- callback do pai
 }
 
-type ChatEntry = {
-  id: string;
-  message: string;
-  isUser: boolean;
-  timestamp: Date;
-};
-
-export const ChatInput = ({ disabled }: ChatInputProps) => {
+export const ChatInput = ({ disabled, onSendMessage }: ChatInputProps) => {
   const [message, setMessage] = useState("");
-  const [chatMessages, setChatMessages] = useState<ChatEntry[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const enviarParaN8N = async (texto: string) => {
-    setLoading(true);
-
-    const userMessage: ChatEntry = {
-      id: crypto.randomUUID(),
-      message: texto,
-      isUser: true,
-      timestamp: new Date(),
-    };
-    setChatMessages((prev) => [...prev, userMessage]);
-
-    try {
-      const resposta = await fetch(
-        "https://n8n.hackathon.souamigu.org.br/webhook-test/90e74c2f-1059-44b3-8f8d-4e447091b4d7",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ texto }),
-        }
-      );
-
-      // Verifica se o status HTTP é OK (200–299)
-      if (!resposta.ok) {
-        const textoErro = await resposta.text();
-        console.error("Resposta HTTP não OK:", resposta.status, textoErro);
-        throw new Error(`HTTP error: ${resposta.status}`);
-      }
-
-      // Recebe como texto puro
-      const respostaTexto = await resposta.text();
-
-      console.log("RespostaTexto capturada:", respostaTexto);
-
-      const botMessage: ChatEntry = {
-        id: crypto.randomUUID(),
-        message: respostaTexto,
-        isUser: false,
-        timestamp: new Date(),
-      };
-      setChatMessages((prev) => [...prev, botMessage]);
-    } catch (err) {
-      console.error("Erro ao enviar para N8N:", err);
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          message: `❌ Erro ao comunicar com o agente: ${err instanceof Error ? err.message : String(err)}`,
-          isUser: false,
-          timestamp: new Date(),
-        },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim() && !disabled && !loading) {
-      enviarParaN8N(message);
+    if (message.trim() && !disabled) {
+      onSendMessage(message.trim()); // envia para o pai
       setMessage("");
     }
   };
@@ -92,56 +27,34 @@ export const ChatInput = ({ disabled }: ChatInputProps) => {
   };
 
   return (
-    <div className="flex flex-col">
-      {/* Mensagens do chat */}
-      <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto px-4 py-2">
-        {chatMessages.map((msg) => (
-          <ChatMessage
-            key={msg.id}
-            message={msg.message}
-            isUser={msg.isUser}
-            timestamp={msg.timestamp}
+    <form
+      onSubmit={handleSubmit}
+      className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+    >
+      <div className="container max-w-4xl mx-auto p-4">
+        <div className="flex gap-2 items-end">
+          <Textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Digite sua mensagem..."
+            disabled={disabled}
+            className="min-h-[60px] max-h-[200px] resize-none rounded-2xl border-border focus-visible:ring-primary"
+            rows={1}
           />
-        ))}
-        {loading && (
-          <ChatMessage
-            message="Digitando..."
-            isUser={false}
-            timestamp={new Date()}
-          />
-        )}
-      </div>
-
-      {/* Input */}
-      <form
-        onSubmit={handleSubmit}
-        className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
-      >
-        <div className="container max-w-4xl mx-auto p-4">
-          <div className="flex gap-2 items-end">
-            <Textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Digite sua mensagem..."
-              disabled={disabled || loading}
-              className="min-h-[60px] max-h-[200px] resize-none rounded-2xl border-border focus-visible:ring-primary"
-              rows={1}
-            />
-            <Button
-              type="submit"
-              disabled={!message.trim() || disabled || loading}
-              size="icon"
-              className="h-[60px] w-[60px] rounded-2xl bg-primary hover:bg-primary/90 transition-all"
-            >
-              <Send className="h-5 w-5" />
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2 text-center">
-            Pressione Enter para enviar, Shift + Enter para nova linha
-          </p>
+          <Button
+            type="submit"
+            disabled={!message.trim() || disabled}
+            size="icon"
+            className="h-[60px] w-[60px] rounded-2xl bg-primary hover:bg-primary/90 transition-all"
+          >
+            <Send className="h-5 w-5" />
+          </Button>
         </div>
-      </form>
-    </div>
+        <p className="text-xs text-muted-foreground mt-2 text-center">
+          Pressione Enter para enviar, Shift + Enter para nova linha
+        </p>
+      </div>
+    </form>
   );
 };
