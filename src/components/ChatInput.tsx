@@ -4,17 +4,42 @@ import { Textarea } from "@/components/ui/textarea";
 import { Send } from "lucide-react";
 
 interface ChatInputProps {
-  onSendMessage: (message: string) => void;
+  onSendMessage?: (message: string) => void; // opcional se quiser usar callback
   disabled?: boolean;
 }
 
 export const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
   const [message, setMessage] = useState("");
 
+  const enviarParaN8N = async (texto: string) => {
+    try {
+      const resposta = await fetch(
+        "https://n8n.hackathon.souamigu.org.br/webhook-test/90e74c2f-1059-44b3-8f8d-4e447091b4d7",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ texto }),
+        }
+      );
+
+      const data = await resposta.json();
+      console.log("Resposta do N8N:", data);
+    } catch (err) {
+      console.error("Erro ao enviar para N8N:", err);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && !disabled) {
-      onSendMessage(message);
+      // envia para N8N
+      enviarParaN8N(message);
+
+      // se tiver callback externo
+      if (onSendMessage) {
+        onSendMessage(message);
+      }
+
       setMessage("");
     }
   };
@@ -27,7 +52,10 @@ export const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <form
+      onSubmit={handleSubmit}
+      className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+    >
       <div className="container max-w-4xl mx-auto p-4">
         <div className="flex gap-2 items-end">
           <Textarea
