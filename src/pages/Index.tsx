@@ -3,7 +3,6 @@ import { ChatHeader } from "@/components/ChatHeader";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ChatInput } from "@/components/ChatInput";
 import { TypingIndicator } from "@/components/TypingIndicator";
-import { ChatSidebar } from "@/components/ChatSidebar";
 import { Dashboard, DashboardStats } from "@/components/Dashboard";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -12,13 +11,6 @@ interface Message {
   text: string;
   isUser: boolean;
   timestamp: Date;
-}
-
-interface Conversation {
-  id: string;
-  title: string;
-  timestamp: Date;
-  messages: Message[];
 }
 
 type QueryCategory = "rastreamento" | "documentacao" | "operacoes";
@@ -46,36 +38,20 @@ const categorizeQuery = (text: string): QueryCategory => {
 };
 
 const Index = () => {
-  const [conversations, setConversations] = useState<Conversation[]>([
+  const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      title: "Conversa inicial",
+      text: "Olá! Sou o assistente do ChatBot Portuário. Como posso ajudá-lo com informações sobre operações marítimas, documentação de carga ou rastreamento de navios?",
+      isUser: false,
       timestamp: new Date(),
-      messages: [
-        {
-          id: "1",
-          text: "Olá! Sou o assistente do ChatBot Portuário. Como posso ajudá-lo com informações sobre operações marítimas, documentação de carga ou rastreamento de navios?",
-          isUser: false,
-          timestamp: new Date(),
-        },
-      ],
     },
   ]);
 
-  const [currentConversationId, setCurrentConversationId] = useState("1");
   const [isTyping, setIsTyping] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const currentConversation = conversations.find(
-    (c) => c.id === currentConversationId
-  );
-  const messages = currentConversation?.messages || [];
-
   const dashboardStats = useMemo((): DashboardStats => {
-    const allUserMessages = conversations.flatMap((conv) =>
-      conv.messages.filter((m) => m.isUser)
-    );
+    const userMessages = messages.filter((m) => m.isUser);
 
     const categoryCounts = {
       rastreamento: 0,
@@ -83,21 +59,18 @@ const Index = () => {
       operacoes: 0,
     };
 
-    allUserMessages.forEach((msg) => {
+    userMessages.forEach((msg) => {
       const category = categorizeQuery(msg.text);
       categoryCounts[category]++;
     });
 
     return {
-      totalConversations: conversations.length,
-      totalQueries: allUserMessages.length,
+      totalConversations: 1,
+      totalQueries: userMessages.length,
       categoryCounts,
-      recentQueries: allUserMessages
-        .slice(-10)
-        .reverse()
-        .map((m) => m.text),
+      recentQueries: userMessages.slice(-10).reverse().map((m) => m.text),
     };
-  }, [conversations]);
+  }, [messages]);
 
   const scrollToBottom = () => {
     if (scrollRef.current) {
@@ -109,33 +82,6 @@ const Index = () => {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const handleNewChat = () => {
-    const newConv: Conversation = {
-      id: Date.now().toString(),
-      title: `Nova conversa ${conversations.length + 1}`,
-      timestamp: new Date(),
-      messages: [
-        {
-          id: Date.now().toString(),
-          text: "Olá! Sou o assistente do ChatBot Portuário. Como posso ajudá-lo com informações sobre operações marítimas, documentação de carga ou rastreamento de navios?",
-          isUser: false,
-          timestamp: new Date(),
-        },
-      ],
-    };
-    setConversations((prev) => [...prev, newConv]);
-    setCurrentConversationId(newConv.id);
-  };
-
-  const handleDeleteConversation = (id: string) => {
-    if (conversations.length === 1) return;
-    setConversations((prev) => prev.filter((c) => c.id !== id));
-    if (currentConversationId === id) {
-      const fallbackId = conversations.find((c) => c.id !== id)?.id || "1";
-      setCurrentConversationId(fallbackId);
-    }
-  };
-
   const handleSendMessage = async (text: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -144,14 +90,7 @@ const Index = () => {
       timestamp: new Date(),
     };
 
-    // Adiciona a mensagem do usuário
-    setConversations((prev) =>
-      prev.map((conv) =>
-        conv.id === currentConversationId
-          ? { ...conv, messages: [...conv.messages, userMessage] }
-          : conv
-      )
-    );
+    setMessages((prev) => [...prev, userMessage]);
     setIsTyping(true);
 
     try {
@@ -179,13 +118,7 @@ const Index = () => {
         timestamp: new Date(),
       };
 
-      setConversations((prev) =>
-        prev.map((conv) =>
-          conv.id === currentConversationId
-            ? { ...conv, messages: [...conv.messages, botMessage] }
-            : conv
-        )
-      );
+      setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
       const erroBot: Message = {
         id: (Date.now() + 2).toString(),
@@ -196,13 +129,7 @@ const Index = () => {
         timestamp: new Date(),
       };
 
-      setConversations((prev) =>
-        prev.map((conv) =>
-          conv.id === currentConversationId
-            ? { ...conv, messages: [...conv.messages, erroBot] }
-            : conv
-        )
-      );
+      setMessages((prev) => [...prev, erroBot]);
     } finally {
       setIsTyping(false);
     }
@@ -210,17 +137,8 @@ const Index = () => {
 
   return (
     <div className="flex h-screen bg-gradient-sky">
-      <ChatSidebar
-        isOpen={isSidebarOpen}
-        conversations={conversations}
-        currentConversationId={currentConversationId}
-        onNewChat={handleNewChat}
-        onSelectConversation={setCurrentConversationId}
-        onDeleteConversation={handleDeleteConversation}
-      />
-
       <div className="flex flex-col flex-1 min-w-0">
-        <ChatHeader onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
+        <ChatHeader onMenuClick={() => {}} />
 
         <ScrollArea className="flex-1 container max-w-4xl mx-auto">
           <div className="py-4">
@@ -238,6 +156,11 @@ const Index = () => {
         </ScrollArea>
 
         <ChatInput onSendMessage={handleSendMessage} disabled={isTyping} />
+      </div>
+
+      {/* Dashboard opcional à direita */}
+      <div className="hidden lg:block w-[320px] border-l bg-white/60 backdrop-blur">
+        <Dashboard stats={dashboardStats} />
       </div>
     </div>
   );
