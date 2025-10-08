@@ -4,17 +4,49 @@ import { Textarea } from "@/components/ui/textarea";
 import { Send } from "lucide-react";
 
 interface ChatInputProps {
-  onSendMessage: (message: string) => void;
+  onSendMessage?: (message: string) => void; // opcional se quiser usar callback
   disabled?: boolean;
 }
 
 export const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
   const [message, setMessage] = useState("");
+  const [chatResponse, setChatResponse] = useState<string | null>(null); // Estado para armazenar a resposta do n8n
+
+  const enviarParaN8N = async (texto: string) => {
+    try {
+      const resposta = await fetch(
+        "https://n8n.hackathon.souamigu.org.br/webhook-test/90e74c2f-1059-44b3-8f8d-4e447091b4d7",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ texto }), // Enviando o texto da mensagem
+        }
+      );
+
+      const data = await resposta.json();
+      console.log("Resposta do N8N:", data);
+
+      // Captura apenas o conteúdo da chave "output" da resposta do n8n
+      if (data && data[0]?.output) {
+        setChatResponse(data[0].output); // Assume que a resposta vem no formato [{ output: "resposta do agente" }]
+      }
+    } catch (err) {
+      console.error("Erro ao enviar para N8N:", err);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && !disabled) {
-      onSendMessage(message);
+      // Envia a mensagem para o n8n
+      enviarParaN8N(message);
+
+      // Se houver um callback externo
+      if (onSendMessage) {
+        onSendMessage(message);
+      }
+
+      // Limpar a caixa de texto após o envio
       setMessage("");
     }
   };
@@ -27,7 +59,10 @@ export const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <form
+      onSubmit={handleSubmit}
+      className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+    >
       <div className="container max-w-4xl mx-auto p-4">
         <div className="flex gap-2 items-end">
           <Textarea
@@ -51,6 +86,14 @@ export const ChatInput = ({ onSendMessage, disabled }: ChatInputProps) => {
         <p className="text-xs text-muted-foreground mt-2 text-center">
           Pressione Enter para enviar, Shift + Enter para nova linha
         </p>
+
+        {/* Exibir a resposta do N8N após o envio */}
+        {chatResponse && (
+          <div className="mt-4 p-4 bg-gray-100 rounded-lg">
+            <p><strong>Resposta do Agente:</strong></p>
+            <p>{chatResponse}</p>
+          </div>
+        )}
       </div>
     </form>
   );
