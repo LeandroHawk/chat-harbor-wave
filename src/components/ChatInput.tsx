@@ -29,7 +29,6 @@ export const ChatInput = ({ disabled }: ChatInputProps) => {
       isUser: true,
       timestamp: new Date(),
     };
-
     setChatMessages((prev) => [...prev, userMessage]);
 
     try {
@@ -42,8 +41,17 @@ export const ChatInput = ({ disabled }: ChatInputProps) => {
         }
       );
 
-      // ✅ Recebendo como texto (não JSON)
+      // Verifica se o status HTTP é OK (200–299)
+      if (!resposta.ok) {
+        const textoErro = await resposta.text();
+        console.error("Resposta HTTP não OK:", resposta.status, textoErro);
+        throw new Error(`HTTP error: ${resposta.status}`);
+      }
+
+      // Recebe como texto puro
       const respostaTexto = await resposta.text();
+
+      console.log("RespostaTexto capturada:", respostaTexto);
 
       const botMessage: ChatEntry = {
         id: crypto.randomUUID(),
@@ -51,7 +59,6 @@ export const ChatInput = ({ disabled }: ChatInputProps) => {
         isUser: false,
         timestamp: new Date(),
       };
-
       setChatMessages((prev) => [...prev, botMessage]);
     } catch (err) {
       console.error("Erro ao enviar para N8N:", err);
@@ -59,7 +66,7 @@ export const ChatInput = ({ disabled }: ChatInputProps) => {
         ...prev,
         {
           id: crypto.randomUUID(),
-          message: "❌ Erro ao comunicar com o agente.",
+          message: `❌ Erro ao comunicar com o agente: ${err instanceof Error ? err.message : String(err)}`,
           isUser: false,
           timestamp: new Date(),
         },
@@ -96,8 +103,6 @@ export const ChatInput = ({ disabled }: ChatInputProps) => {
             timestamp={msg.timestamp}
           />
         ))}
-
-        {/* Indicador de carregamento */}
         {loading && (
           <ChatMessage
             message="Digitando..."
@@ -107,7 +112,7 @@ export const ChatInput = ({ disabled }: ChatInputProps) => {
         )}
       </div>
 
-      {/* Campo de entrada */}
+      {/* Input */}
       <form
         onSubmit={handleSubmit}
         className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
