@@ -21,9 +21,8 @@ export const ChatInput = ({ disabled }: ChatInputProps) => {
   const [loading, setLoading] = useState(false);
 
   const enviarParaN8N = async (texto: string) => {
-    setLoading(true); // inicia carregamento
+    setLoading(true);
 
-    // Adiciona mensagem do usuário
     const userMessage: ChatEntry = {
       id: crypto.randomUUID(),
       message: texto,
@@ -43,28 +42,17 @@ export const ChatInput = ({ disabled }: ChatInputProps) => {
         }
       );
 
-      const data = await resposta.json();
+      // ✅ Recebendo como texto (não JSON)
+      const respostaTexto = await resposta.text();
 
-      if (data && data[0]?.output) {
-        const botMessage: ChatEntry = {
-          id: crypto.randomUUID(),
-          message: data[0].output,
-          isUser: false,
-          timestamp: new Date(),
-        };
+      const botMessage: ChatEntry = {
+        id: crypto.randomUUID(),
+        message: respostaTexto,
+        isUser: false,
+        timestamp: new Date(),
+      };
 
-        setChatMessages((prev) => [...prev, botMessage]);
-      } else {
-        setChatMessages((prev) => [
-          ...prev,
-          {
-            id: crypto.randomUUID(),
-            message: "❌ Erro: resposta inesperada do agente.",
-            isUser: false,
-            timestamp: new Date(),
-          },
-        ]);
-      }
+      setChatMessages((prev) => [...prev, botMessage]);
     } catch (err) {
       console.error("Erro ao enviar para N8N:", err);
       setChatMessages((prev) => [
@@ -77,7 +65,7 @@ export const ChatInput = ({ disabled }: ChatInputProps) => {
         },
       ]);
     } finally {
-      setLoading(false); // encerra carregamento
+      setLoading(false);
     }
   };
 
@@ -109,7 +97,7 @@ export const ChatInput = ({ disabled }: ChatInputProps) => {
           />
         ))}
 
-        {/* Loading typing indicator */}
+        {/* Indicador de carregamento */}
         {loading && (
           <ChatMessage
             message="Digitando..."
@@ -119,7 +107,7 @@ export const ChatInput = ({ disabled }: ChatInputProps) => {
         )}
       </div>
 
-      {/* Input */}
+      {/* Campo de entrada */}
       <form
         onSubmit={handleSubmit}
         className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
