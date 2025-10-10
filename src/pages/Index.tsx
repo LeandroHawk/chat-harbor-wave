@@ -35,6 +35,7 @@ const Index = () => {
     scrollToBottom();
   }, [messages, isTyping]);
 
+  // ✅ Callback chamado quando o usuário envia uma mensagem
   const handleSendMessage = async (text: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -47,14 +48,16 @@ const Index = () => {
     setIsTyping(true);
 
     try {
-      const resposta = await fetch(
-        "https://n8n.hackathon.souamigu.org.br/webhook/90e74c2f-1059-44b3-8f8d-4e447091b4d7",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ texto: text }),
-        }
-      );
+      const webhookUrl = import.meta.env.VITE_URL_WEBHOOK;
+      if (!webhookUrl) {
+        throw new Error("Variável VITE_URL_WEBHOOK não configurada.");
+      }
+
+      const resposta = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto: text }),
+      });
 
       if (!resposta.ok) {
         const erroTexto = await resposta.text();
@@ -81,7 +84,6 @@ const Index = () => {
         isUser: false,
         timestamp: new Date(),
       };
-
       setMessages((prev) => [...prev, erroBot]);
     } finally {
       setIsTyping(false);
